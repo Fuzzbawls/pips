@@ -1,0 +1,103 @@
+<pre>
+  PIP: 1
+  Layer: API/RPC
+  Title: RPC Command Standards
+  Author: Fuzzbawls <fuzzbawls@gmail.com>
+  Comments-Summary: No comments yet.
+  Comments-URI: https://github.com/pivx-project/pips/wiki/Comments:PIP-0001
+  Status: Draft
+  Type: Standards Track
+  Created: 2017-08-10
+  License: BSD-2-Clause
+           CC-BY-SA-4.0
+</pre>
+
+==Abstract==
+
+This PIP describes modifications to the RPC command standards such that each available command follows the same set of implementation rules.
+
+==Specification==
+
+===One Function / One Command===
+
+Under this new specification, RPC Commands will no longer be allowed to serve multiple functions. This is practiced already with the majority of commands inherited from Bitcoin, however a number of commands inherited from Dash do not currently follow this standard. Commands that serve one function, yet have subsets to that function are allowed as described below:
+
+Take the <code>addnode</code> command for example. This command serves a single function of explicitely managing the manually added node addresses. It has three subsets in the form of <code>add</code>, <code>remove</code>, and <code>onetry</code> that are considered acceptable subsets to the command's primary function.
+
+By contrast, take the existing <code>masternode</code> command that was inherited from Dash. This command serves a myraid of functions ranging from read-only information retrevial (<code>masternode list</code> and <code>masternode status</code>) to network message instigation (<code>masternode start</code> and <code>masternode start-many</code>). It is what would be called a "super-command" that acts as a hub for a number of various sub-commands, aka "monolithic" in nature.
+
+===Help Documentation===
+
+Each command's help documentation must include the following information, in order:
+
+* Command syntax
+* Command Description
+* Command Arguments (if any) in numbered list
+* Expected JSON Result Format
+* Example invocations
+
+Syntax is further described as follows:
+{| class="wikitable"
+!colspan=3|template "syntax" element
+|-
+! Parameter Type !! Type !! Description
+|-
+| string || String || must be quoted in syntax, ie <code>"string"</code>
+|-
+| integer || Number || must not be quoted
+|-
+| boolean || Bool || must not be quoted and must be represented by arbitrary name
+|-
+| optional parameter || Any || must be wrapped in parentheses and have proper quoting
+|-
+| subset || String || must be quoted and deliminated in bars (<code>|</code>)
+|}
+
+Example syntax:
+* <code>addnode "node" "add|remove|onetry"</code>
+* <code>mnbudgetvoteraw "masternode-tx-hash" masternode-tx-index "proposal-hash" vote time "vote-sig"</code>
+* <code>getblock "hash" ( verbose )</code>
+
+===JSON Standard Results===
+
+Command results must comply with existing JSON standards as outlined in [[http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf|ECMA-404]] as well as [[https://tools.ietf.org/html/rfc7159|RFC-7159]] and be deterministic and programatically interpretable. Mixed value results will no longer be acceptable under this standard, however single integer/string results will be.
+
+Examples:
+* <code>getbestblockheight</code> returns a single integer result that can be programatically interpreted as a stand-alone integer.
+* <code>getblochhash 1337</code> returns a single string result that can be programatically interpreted as a stand-alone string.
+* <code>masternode count</code> (prior to v2.3.0) returned a single string that could <b>NOT</b> be programatically interpreted as it resulted in multiple integer values wrapped in a single string.
+
+Further, error results must return a status code that is non-zero by throwing a runtime_error (<code>throw runtime_error()</code>) rather than a simple <code>return()</code>
+
+==Motivation==
+
+Allowing commands to serve as monolithic "super-commands" leads to poor documentation and uncertainty with expected result format, as well as confusion or incompatibilities with regard to command parameters.
+
+==Rationale==
+
+Why set an RPC standard?
+* Current commands are either deterministic in their results, or not deterministic at all.
+* Programatic readability is currently non-standard with some commands, making it difficult to predict the expected output.
+
+Why should we impliment the one function / one command rhetoric?
+* K.I.S.S. can be quoted here (Keep it Simple, Stupid).
+* Having monolithic super-commands adds nth degree of confusion.
+
+==Backwards Compatibility==
+
+Existing RPC commands from v2.3.0 that are considered to be monolithic (super-commands) should have compatibility considerations, where applicable, such that the existing command can still be used as a pointer to the new standards-compliant command until the next major release version. These super-commands will be marked and noted as depreciated in their help documentation, and ultimately removed.
+
+Example:
+<code>masternode list</code> is a function under the monolithic <code>masternode</code> command. It, however, is a simple pointer to the <code>masternodelist</code> command for the sake of backwards compatibility.
+
+==Reference Implementation==
+
+* TBA
+
+==See Also==
+* [[http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf|JSON ECMA-404 Standard]]
+* [[https://tools.ietf.org/html/rfc7159|IETF RFC-7159]]
+
+==Copyright==
+
+This BIP is dual-licensed under the Creative Commons and BSD 2-clause license.
